@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check for early TCF Canada slots
         env:
-          NTFY_TOPIC: gblc-tcf-4550d2a61665
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           CUTOFF_DATE: "2026-12-21"
         run: python3 check.py
       - name: Save state
