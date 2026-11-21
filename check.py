@@ -34,6 +34,10 @@ def notify(title, body):
 
 
 def main():
+    if os.environ.get("TEST_ALERT") == "true":
+        notify("Test alert", "Your TCF slot checker can reach your phone. Tap to open the booking page.")
+        print("Test alert sent")
+        return
     schedules = fetch()
     matches = [
         s for s in schedules

@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "*/5 * * * *"   # every 5 min (GitHub may run it a few minutes late)
   workflow_dispatch:         # lets you run it manually from the Actions tab
+    inputs:
+      test_alert:
+        description: "Send a test notification"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -22,6 +27,7 @@ jobs:
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           CUTOFF_DATE: "2026-12-21"
+          TEST_ALERT: ${{ inputs.test_alert }}
         run: python3 check.py
       - name: Save state
         run: |
