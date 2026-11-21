@@ -3,7 +3,8 @@ name: TCF slot checker
 on:
   schedule:
     - cron: "*/5 * * * *"   # every 5 min (GitHub may run it a few minutes late)
-  workflow_dispatch:         # lets you run it manually from the Actions tab
+    - cron: "7 16 * * *"    # daily "still watching" heartbeat, ~8 AM Pacific
+  workflow_dispatch:         # run manually from the Actions tab
     inputs:
       test_alert:
         description: "Send a test notification"
@@ -11,7 +12,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: write   # only to save state.json back to this repo
 
 concurrency:
   group: tcf-checker
@@ -22,19 +23,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4, pinned
       - name: Check for early TCF Canada slots
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           CUTOFF_DATE: "2026-12-21"
-          TEST_ALERT: ${{ inputs.test_alert }}
+          MODE: ${{ inputs.test_alert && 'test' || (github.event.schedule == '7 16 * * *' && 'heartbeat' || 'check') }}
         run: python3 check.py
       - name: Save state
+        if: always()
         run: |
-          if [ -n "$(git status --porcelain seen.json)" ]; then
+          if [ -n "$(git status --porcelain state.json)" ]; then
             git config user.name "slot-checker"
             git config user.email "slot-checker@users.noreply.github.com"
-            git add seen.json
-            git commit -m "Update seen slots"
-            git push
+            git add state.json
+            git commit -q -m "Update checker state"
+            for i in 1 2 3; do
+              git pull -q --rebase && git push -q && break
+              sleep 5
+            done
           fi
